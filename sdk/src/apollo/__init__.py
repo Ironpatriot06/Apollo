@@ -1,4 +1,13 @@
-from .instrumentation import ApolloHTTPX, ApolloSQLAlchemy
+from .instrumentation import (
+    ApolloExceptionInstrumentation,
+    ApolloHTTPX,
+    ApolloSQLAlchemy,
+)
 from .middleware import ApolloMiddleware
 
-__all__ = ["ApolloHTTPX", "ApolloMiddleware", "ApolloSQLAlchemy"]
+__all__ = [
+    "ApolloExceptionInstrumentation",
+    "ApolloHTTPX",
+    "ApolloMiddleware",
+    "ApolloSQLAlchemy",
+]

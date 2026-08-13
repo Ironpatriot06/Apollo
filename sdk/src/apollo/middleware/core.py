@@ -4,6 +4,7 @@ import uuid
 from datetime import datetime, timezone
 
 from apollo.context import clear_request_id, set_request_id
+from apollo.instrumentation import ApolloExceptionInstrumentation
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from apollo.models import RequestEvent
@@ -27,6 +28,9 @@ class ApolloMiddleware:
                     "http://127.0.0.1:8001/api/v1/execution-events"
                 ),
             ),
+        )
+        self.exception_instrumentation = ApolloExceptionInstrumentation(
+            self.queue
         )
         self._worker_started = False
         self._worker_lock = asyncio.Lock()
@@ -71,6 +75,9 @@ class ApolloMiddleware:
 
         try:
             await self.app(scope, receive, send_wrapper)
+        except Exception as exc:
+            self.exception_instrumentation.capture_exception(exc)
+            raise
         finally:
             duration_ms = (time.perf_counter() - start_time) * 1000
 

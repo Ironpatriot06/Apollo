@@ -100,3 +100,8 @@ async def get_user(user_id: int):
         "name": user["name"],
         "profile": profile,
     }
+
+
+@app.get("/explode")
+async def explode():
+    raise RuntimeError("Deliberate Apollo demo exception")
