@@ -5,6 +5,7 @@ from app.models import ExecutionEvent
 from app.models import Request
 from app.schemas.events import RequestEvent
 from app.schemas.execution_events import ExecutionEvent as ExecutionEventSchema
+from app.schemas.timeline import RequestTimeline, TimelineExecutionEvent
 
 
 async def save_request_event(
@@ -60,3 +61,49 @@ async def save_execution_event(
     await db.refresh(execution_event)
 
     return execution_event
+
+
+async def get_request_execution_events(
+    db: AsyncSession,
+    request_id: str,
+) -> list[ExecutionEvent]:
+    result = await db.execute(
+        select(ExecutionEvent)
+        .where(ExecutionEvent.request_id == request_id)
+        .order_by(ExecutionEvent.started_at.asc())
+    )
+
+    return list(result.scalars().all())
+
+
+async def get_request_timeline(
+    db: AsyncSession,
+    request_id: str,
+) -> RequestTimeline | None:
+    request = await get_request_event(db, request_id)
+
+    if request is None:
+        return None
+
+    execution_events = await get_request_execution_events(db, request_id)
+
+    return RequestTimeline(
+        request=RequestEvent(
+            request_id=request.request_id,
+            method=request.method,
+            path=request.path,
+            status_code=request.status_code,
+            started_at=request.started_at,
+            duration_ms=request.duration_ms,
+        ),
+        events=[
+            TimelineExecutionEvent(
+                event_id=event.event_id,
+                event_type=event.event_type,
+                started_at=event.started_at,
+                duration_ms=event.duration_ms,
+                metadata=event.event_metadata,
+            )
+            for event in execution_events
+        ],
+    )

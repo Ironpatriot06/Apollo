@@ -7,8 +7,10 @@ from app.db.init_db import init_db
 from app.db.session import get_db
 from app.schemas.events import RequestEvent
 from app.schemas.execution_events import ExecutionEvent
+from app.schemas.timeline import RequestTimeline
 from app.services.event_service import (
     get_request_event,
+    get_request_timeline,
     save_execution_event,
     save_request_event,
 )
@@ -52,6 +54,25 @@ async def ingest_execution_event(
     await save_execution_event(db, event)
 
     return {"status": "accepted"}
+
+@app.get(
+    "/api/v1/events/{request_id}/timeline",
+    response_model=RequestTimeline,
+)
+async def get_event_timeline(
+    request_id: str,
+    db: AsyncSession = Depends(get_db),
+) -> RequestTimeline:
+    timeline = await get_request_timeline(db, request_id)
+
+    if timeline is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Event not found",
+        )
+
+    return timeline
+
 
 @app.get("/api/v1/events/{request_id}")
 async def get_event(
