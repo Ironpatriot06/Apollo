@@ -5,8 +5,10 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11.8"
 dependencies = [
+    "aiosqlite>=0.22.1",
     "apollo-sdk",
     "fastapi>=0.141.1",
+    "sqlalchemy>=2.0.52",
     "uvicorn>=0.52.1",
 ]
 

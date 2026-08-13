@@ -1,22 +1,24 @@
 import asyncio
 
-from apollo.models import RequestEvent
+from apollo.models import ExecutionEvent, RequestEvent
+
+QueueEvent = RequestEvent | ExecutionEvent
 
 
 class EventQueue:
     def __init__(self, max_size: int = 1000) -> None:
-        self._queue: asyncio.Queue[RequestEvent] = asyncio.Queue(
+        self._queue: asyncio.Queue[QueueEvent] = asyncio.Queue(
             maxsize=max_size
         )
 
-    def put(self, event: RequestEvent) -> bool:
+    def put(self, event: QueueEvent) -> bool:
         try:
             self._queue.put_nowait(event)
             return True
         except asyncio.QueueFull:
             return False
 
-    async def get(self) -> RequestEvent:
+    async def get(self) -> QueueEvent:
         return await self._queue.get()
 
     def task_done(self) -> None:

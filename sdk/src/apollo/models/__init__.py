@@ -1,3 +1,3 @@
-from .events import RequestEvent
+from .events import RequestEvent, ExecutionEvent
 
-__all__ = ["RequestEvent"]
+__all__ = ["RequestEvent", "ExecutionEvent"]

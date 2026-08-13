@@ -1,6 +1,6 @@
 from app.db.base import Base
 from app.db.session import engine
-from app.models import Request
+from app.models import ExecutionEvent, Request
 
 
 async def init_db() -> None:

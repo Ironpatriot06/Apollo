@@ -6,8 +6,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.init_db import init_db
 from app.db.session import get_db
 from app.schemas.events import RequestEvent
+from app.schemas.execution_events import ExecutionEvent
 from app.services.event_service import (
     get_request_event,
+    save_execution_event,
     save_request_event,
 )
 
@@ -38,6 +40,18 @@ async def ingest_event(
 
     return {"status": "accepted"}
 
+
+@app.post(
+    "/api/v1/execution-events",
+    status_code=status.HTTP_202_ACCEPTED,
+)
+async def ingest_execution_event(
+    event: ExecutionEvent,
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, str]:
+    await save_execution_event(db, event)
+
+    return {"status": "accepted"}
 
 @app.get("/api/v1/events/{request_id}")
 async def get_event(
