@@ -1,8 +1,27 @@
-from fastapi import FastAPI, status
+from contextlib import asynccontextmanager
 
+from fastapi import Depends, FastAPI, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.db.init_db import init_db
+from app.db.session import get_db
 from app.schemas.events import RequestEvent
+from app.services.event_service import (
+    get_request_event,
+    save_request_event,
+)
 
-app = FastAPI(title="Apollo Backend")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await init_db()
+    yield
+
+
+app = FastAPI(
+    title="Apollo Backend",
+    lifespan=lifespan,
+)
 
 
 @app.get("/health")
@@ -11,7 +30,33 @@ async def health() -> dict[str, str]:
 
 
 @app.post("/api/v1/events", status_code=status.HTTP_202_ACCEPTED)
-async def ingest_event(event: RequestEvent) -> dict[str, str]:
-    print(f"[Apollo Backend] Received event: {event.model_dump_json()}")
+async def ingest_event(
+    event: RequestEvent,
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, str]:
+    await save_request_event(db, event)
 
     return {"status": "accepted"}
+
+
+@app.get("/api/v1/events/{request_id}")
+async def get_event(
+    request_id: str,
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    request = await get_request_event(db, request_id)
+
+    if request is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Event not found",
+        )
+
+    return {
+        "request_id": request.request_id,
+        "method": request.method,
+        "path": request.path,
+        "status_code": request.status_code,
+        "started_at": request.started_at,
+        "duration_ms": request.duration_ms,
+    }
