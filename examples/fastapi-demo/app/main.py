@@ -1,11 +1,12 @@
 from contextlib import asynccontextmanager
 
+import httpx
 from fastapi import FastAPI
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from apollo import ApolloMiddleware
-from apollo.instrumentation import ApolloSQLAlchemy
+from apollo.instrumentation import ApolloHTTPX, ApolloSQLAlchemy
 from apollo.queue import EventQueue
 
 
@@ -19,11 +20,13 @@ SessionLocal = async_sessionmaker(
 )
 
 queue = EventQueue()
+http_instrumentation = ApolloHTTPX(queue=queue)
 
 # Apollo middleware and SQL instrumentation share the SAME queue.
 # This is important: both RequestEvent and ExecutionEvent
 # must travel through the same worker/transport pipeline.
 app = FastAPI()
+profile_app = FastAPI()
 
 
 @app.on_event("startup")
@@ -55,6 +58,14 @@ async def startup() -> None:
 app.add_middleware(ApolloMiddleware, queue=queue)
 
 
+@profile_app.get("/profiles/{user_id}")
+async def get_profile(user_id: int):
+    return {
+        "user_id": user_id,
+        "tier": "founder",
+    }
+
+
 @app.get("/")
 async def root():
     return {"message": "Hello from Apollo"}
@@ -75,7 +86,17 @@ async def get_user(user_id: int):
     if user is None:
         return {"error": "User not found"}
 
+    async with http_instrumentation.async_client(
+        transport=http_instrumentation.async_transport(
+            httpx.ASGITransport(app=profile_app)
+        ),
+        base_url="http://profile-service.local",
+    ) as client:
+        profile_response = await client.get(f"/profiles/{user_id}")
+        profile = profile_response.json()
+
     return {
         "user_id": user["id"],
         "name": user["name"],
+        "profile": profile,
     }
