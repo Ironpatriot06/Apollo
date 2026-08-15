@@ -1,0 +1,64 @@
+:root {
+  --bg: #0d1117;
+  --bg-elevated: #161b22;
+  --bg-subtle: #1c2128;
+  --border: #30363d;
+  --border-strong: #484f58;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --text-dim: #6e7681;
+  --accent: #58a6ff;
+  --accent-soft: rgba(88, 166, 255, 0.12);
+  --success: #3fb950;
+  --success-soft: rgba(63, 185, 80, 0.12);
+  --warning: #d29922;
+  --warning-soft: rgba(210, 153, 34, 0.12);
+  --danger: #f85149;
+  --danger-soft: rgba(248, 81, 73, 0.14);
+  --method-get: #3fb950;
+  --method-post: #58a6ff;
+  --method-put: #d29922;
+  --method-delete: #f85149;
+  --method-other: #a371f7;
+  --sidebar-width: 220px;
+  --font-sans: var(--font-plex-sans), "Segoe UI", sans-serif;
+  --font-mono: var(--font-plex-mono), "SF Mono", "Menlo", monospace;
+  --radius: 6px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+code,
+pre {
+  font-family: var(--font-mono);
+}
+
+::selection {
+  background: var(--accent-soft);
+}

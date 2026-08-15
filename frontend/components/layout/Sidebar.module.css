@@ -1,0 +1,70 @@
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 20px 16px;
+  border-right: 1px solid var(--border);
+  background: var(--bg-elevated);
+  min-height: 100vh;
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 8px;
+}
+
+.brandName {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.brandSub {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.link {
+  display: block;
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  color: var(--text-muted);
+}
+
+.link:hover {
+  background: var(--bg-subtle);
+  color: var(--text);
+}
+
+.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.footer {
+  margin-top: auto;
+  padding: 8px;
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+@media (max-width: 900px) {
+  .sidebar {
+    min-height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}

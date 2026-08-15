@@ -1,0 +1,63 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.get {
+  color: var(--method-get);
+  background: var(--success-soft);
+}
+
+.post {
+  color: var(--method-post);
+  background: var(--accent-soft);
+}
+
+.put,
+.patch {
+  color: var(--method-put);
+  background: var(--warning-soft);
+}
+
+.delete {
+  color: var(--method-delete);
+  background: var(--danger-soft);
+}
+
+.other {
+  color: var(--method-other);
+  background: rgba(163, 113, 247, 0.12);
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ok {
+  color: var(--success);
+  background: var(--success-soft);
+}
+
+.warn {
+  color: var(--warning);
+  background: var(--warning-soft);
+}
+
+.err {
+  color: var(--danger);
+  background: var(--danger-soft);
+}
