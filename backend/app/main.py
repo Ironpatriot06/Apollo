@@ -1,16 +1,18 @@
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.init_db import init_db
 from app.db.session import get_db
 from app.schemas.events import RequestEvent
 from app.schemas.execution_events import ExecutionEvent
+from app.schemas.requests import RequestListResponse
 from app.schemas.timeline import RequestTimeline
 from app.services.event_service import (
     get_request_event,
     get_request_timeline,
+    list_requests,
     save_execution_event,
     save_request_event,
 )
@@ -54,6 +56,26 @@ async def ingest_execution_event(
     await save_execution_event(db, event)
 
     return {"status": "accepted"}
+
+
+@app.get("/api/v1/requests", response_model=RequestListResponse)
+async def get_requests(
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    status_code: int | None = None,
+    path: str | None = None,
+    method: str | None = None,
+    db: AsyncSession = Depends(get_db),
+) -> RequestListResponse:
+    return await list_requests(
+        db=db,
+        limit=limit,
+        offset=offset,
+        status_code=status_code,
+        path=path,
+        method=method,
+    )
+
 
 @app.get(
     "/api/v1/events/{request_id}/timeline",

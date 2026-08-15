@@ -1,10 +1,11 @@
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import ExecutionEvent
 from app.models import Request
 from app.schemas.events import RequestEvent
 from app.schemas.execution_events import ExecutionEvent as ExecutionEventSchema
+from app.schemas.requests import RequestListResponse
 from app.schemas.timeline import RequestTimeline, TimelineExecutionEvent
 
 
@@ -106,4 +107,58 @@ async def get_request_timeline(
             )
             for event in execution_events
         ],
+    )
+
+
+async def list_requests(
+    db: AsyncSession,
+    limit: int,
+    offset: int,
+    status_code: int | None = None,
+    path: str | None = None,
+    method: str | None = None,
+) -> RequestListResponse:
+    filters = []
+
+    if status_code is not None:
+        filters.append(Request.status_code == status_code)
+
+    if path is not None:
+        filters.append(Request.path == path)
+
+    if method is not None:
+        filters.append(Request.method == method)
+
+    total_result = await db.execute(
+        select(func.count()).select_from(Request).where(*filters)
+    )
+    total = total_result.scalar_one()
+
+    requests_result = await db.execute(
+        select(Request)
+        .where(*filters)
+        .order_by(
+		Request.started_at.desc(),
+		Request.id.desc(),
+	)
+        .limit(limit)
+        .offset(offset)
+    )
+    requests = requests_result.scalars().all()
+
+    return RequestListResponse(
+        items=[
+            RequestEvent(
+                request_id=request.request_id,
+                method=request.method,
+                path=request.path,
+                status_code=request.status_code,
+                started_at=request.started_at,
+                duration_ms=request.duration_ms,
+            )
+            for request in requests
+        ],
+        total=total,
+        limit=limit,
+        offset=offset,
     )
