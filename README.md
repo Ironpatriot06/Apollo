@@ -49,8 +49,8 @@ Apollo is currently divided into three major components:
                            │
                            ▼
 ┌──────────────────────────────────────────────────────────┐
-│                    Apollo Backend                         │
-│                     FastAPI + Python                      │
+│                    Apollo Backend                        │
+│                     FastAPI + Python                     │
 │                                                          │
 │  Request APIs                                            │
 │  Execution Event APIs                                    │
@@ -61,8 +61,8 @@ Apollo is currently divided into three major components:
                            │
                            ▼
 ┌──────────────────────────────────────────────────────────┐
-│                    Persistence Layer                      │
-│                 SQLAlchemy + Database                     │
+│                    Persistence Layer                     │
+│                 SQLAlchemy + Database                    │
 │                                                          │
 │  Requests                                                │
 │  Execution Events                                        │
@@ -70,11 +70,11 @@ Apollo is currently divided into three major components:
                            ▲
                            │
 ┌──────────────────────────┴───────────────────────────────┐
-│                         Apollo SDK                        │
-│                         Python                            │
+│                         Apollo SDK                       │
+│                         Python                           │
 │                                                          │
 │  Captures application execution information              │
-│  and sends observability events to the backend            │
+│  and sends observability events to the backend           │
 └──────────────────────────────────────────────────────────┘
 ```
 
