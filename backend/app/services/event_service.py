@@ -1,4 +1,4 @@
-from sqlalchemy import exists, func, select
+from sqlalchemy import exists, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import ExecutionEvent
@@ -172,6 +172,7 @@ async def list_requests(
     status_code: int | None = None,
     path: str | None = None,
     method: str | None = None,
+    search: str | None = None,
 ) -> RequestListResponse:
     filters = []
 
@@ -183,6 +184,15 @@ async def list_requests(
 
     if method is not None:
         filters.append(Request.method == method)
+
+    if search:
+        search_value = f"%{search.lower()}%"
+        filters.append(
+            or_(
+                func.lower(Request.request_id).like(search_value),
+                func.lower(Request.path).like(search_value),
+            )
+        )
 
     total_result = await db.execute(
         select(func.count()).select_from(Request).where(*filters)

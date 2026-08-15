@@ -94,6 +94,7 @@ export interface ListRequestsParams {
   status_code?: number;
   path?: string;
   method?: string;
+  search?: string;
 }
 
 export interface ListSlowRequestsParams {

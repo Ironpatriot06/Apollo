@@ -133,6 +133,7 @@ async def get_requests(
     status_code: int | None = None,
     path: str | None = None,
     method: str | None = None,
+    search: str | None = None,
     db: AsyncSession = Depends(get_db),
 ) -> RequestListResponse:
     return await list_requests(
@@ -142,6 +143,7 @@ async def get_requests(
         status_code=status_code,
         path=path,
         method=method,
+        search=search,
     )
 
 

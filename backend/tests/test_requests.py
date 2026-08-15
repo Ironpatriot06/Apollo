@@ -189,6 +189,33 @@ async def _test_empty_result() -> None:
         assert body["offset"] == 0
 
 
+async def _test_search_with_filters_and_pagination() -> None:
+    async for client in _with_test_client():
+        await _seed_requests(client)
+
+        response = await client.get(
+            "/api/v1/requests?search=users&method=GET&status_code=200"
+            "&limit=1&offset=1"
+        )
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["total"] == 2
+        assert body["limit"] == 1
+        assert body["offset"] == 1
+        assert [item["request_id"] for item in body["items"]] == [
+            "request-oldest"
+        ]
+
+        request_id_response = await client.get(
+            "/api/v1/requests?search=request-error"
+        )
+        assert request_id_response.status_code == 200
+        request_id_body = request_id_response.json()
+        assert request_id_body["total"] == 1
+        assert request_id_body["items"][0]["request_id"] == "request-error"
+
+
 async def _test_existing_timeline_endpoint_still_works() -> None:
     async for client in _with_test_client():
         started_at = datetime(2026, 1, 1, tzinfo=timezone.utc)
@@ -236,6 +263,10 @@ def test_filters() -> None:
 
 def test_empty_result() -> None:
     asyncio.run(_test_empty_result())
+
+
+def test_search_with_filters_and_pagination() -> None:
+    asyncio.run(_test_search_with_filters_and_pagination())
 
 
 def test_existing_timeline_endpoint_still_works() -> None:

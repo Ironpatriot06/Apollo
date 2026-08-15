@@ -100,6 +100,7 @@ export async function fetchRequestsForFilter(
           method: params.method,
           path: params.path,
           status_code: params.status_code,
+          search: params.search,
         },
         init,
       );

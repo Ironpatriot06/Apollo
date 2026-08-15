@@ -14,6 +14,51 @@
   color: var(--accent);
 }
 
+.liveBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.inlineControl {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.liveBar select {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  padding: 5px 8px;
+}
+
+.refreshError {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(248, 81, 73, 0.4);
+  border-radius: var(--radius);
+  background: var(--danger-soft);
+  padding: 8px 10px;
+}
+
+.inlineButton {
+  border: none;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 0;
+}
+
 .header {
   display: flex;
   flex-direction: column;
@@ -52,6 +97,12 @@
   margin-left: auto;
   font-family: var(--font-mono);
   color: var(--text-muted);
+}
+
+.failureLabel {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 12px;
 }
 
 .metaGrid {
@@ -116,9 +167,68 @@
   letter-spacing: 0.04em;
 }
 
+.slowest {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dependencyGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.dependencyCard,
+.exceptionCard {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  padding: 12px;
+  min-width: 0;
+}
+
+.dependencyTitle {
+  font-weight: 600;
+}
+
+.dependencyMetric {
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.compactList {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.compactList li {
+  margin-bottom: 4px;
+  overflow-wrap: anywhere;
+}
+
+.exceptionStack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 @media (max-width: 900px) {
   .metaGrid,
-  .counts {
+  .counts,
+  .dependencyGrid {
     grid-template-columns: 1fr 1fr;
   }
 

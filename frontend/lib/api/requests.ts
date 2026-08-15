@@ -17,6 +17,7 @@ export function listRequests(
       status_code: params.status_code,
       path: params.path,
       method: params.method,
+      search: params.search,
     },
     init,
   );
