@@ -166,6 +166,34 @@ async def _test_missing_request_id_returns_404() -> None:
         assert response.status_code == 404
 
 
+async def _test_request_with_no_execution_events() -> None:
+    async for client in _with_test_client():
+        request = {
+            "request_id": "request-no-events",
+            "method": "GET",
+            "path": "/no-events",
+            "status_code": 200,
+            "started_at": datetime(
+                2026,
+                1,
+                1,
+                tzinfo=timezone.utc,
+            ).isoformat(),
+            "duration_ms": 1.2,
+        }
+        response = await client.post("/api/v1/events", json=request)
+        assert response.status_code == 202
+
+        response = await client.get(
+            "/api/v1/events/request-no-events/timeline"
+        )
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["request"]["request_id"] == "request-no-events"
+        assert body["events"] == []
+
+
 async def _test_existing_request_endpoint_still_works() -> None:
     async for client in _with_test_client():
         request = await _seed_timeline(client)
@@ -187,6 +215,10 @@ def test_existing_request_can_be_retrieved_with_timeline() -> None:
 
 def test_missing_request_id_returns_404() -> None:
     asyncio.run(_test_missing_request_id_returns_404())
+
+
+def test_request_with_no_execution_events() -> None:
+    asyncio.run(_test_request_with_no_execution_events())
 
 
 def test_existing_request_endpoint_still_works() -> None:

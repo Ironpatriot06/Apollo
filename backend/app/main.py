@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.init_db import init_db
 from app.db.session import get_db
 from app.schemas.events import RequestEvent
+from app.schemas.execution_event_queries import ExecutionEventListResponse
 from app.schemas.execution_events import ExecutionEvent
 from app.schemas.requests import RequestListResponse
 from app.schemas.summary import RequestSummary
@@ -14,7 +15,11 @@ from app.services.event_service import (
     get_request_event,
     get_request_summary,
     get_request_timeline,
+    list_execution_events,
+    list_failed_requests,
     list_requests,
+    list_requests_with_exceptions,
+    list_slow_requests,
     save_execution_event,
     save_request_event,
 )
@@ -58,6 +63,67 @@ async def ingest_execution_event(
     await save_execution_event(db, event)
 
     return {"status": "accepted"}
+
+
+@app.get(
+    "/api/v1/execution-events",
+    response_model=ExecutionEventListResponse,
+)
+async def get_execution_events(
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    event_type: str | None = None,
+    request_id: str | None = None,
+    db: AsyncSession = Depends(get_db),
+) -> ExecutionEventListResponse:
+    return await list_execution_events(
+        db=db,
+        limit=limit,
+        offset=offset,
+        event_type=event_type,
+        request_id=request_id,
+    )
+
+
+@app.get("/api/v1/requests/slow", response_model=RequestListResponse)
+async def get_slow_requests(
+    threshold_ms: float = Query(ge=0),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    db: AsyncSession = Depends(get_db),
+) -> RequestListResponse:
+    return await list_slow_requests(
+        db=db,
+        threshold_ms=threshold_ms,
+        limit=limit,
+        offset=offset,
+    )
+
+
+@app.get("/api/v1/requests/errors", response_model=RequestListResponse)
+async def get_failed_requests(
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    db: AsyncSession = Depends(get_db),
+) -> RequestListResponse:
+    return await list_failed_requests(
+        db=db,
+        limit=limit,
+        offset=offset,
+    )
+
+
+@app.get("/api/v1/requests/exceptions", response_model=RequestListResponse)
+async def get_requests_with_exceptions(
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    db: AsyncSession = Depends(get_db),
+) -> RequestListResponse:
+    return await list_requests_with_exceptions(
+        db=db,
+        limit=limit,
+        offset=offset,
+    )
 
 
 @app.get("/api/v1/requests", response_model=RequestListResponse)

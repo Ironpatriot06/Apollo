@@ -1,9 +1,10 @@
-from sqlalchemy import func, select
+from sqlalchemy import exists, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import ExecutionEvent
 from app.models import Request
 from app.schemas.events import RequestEvent
+from app.schemas.execution_event_queries import ExecutionEventListResponse
 from app.schemas.execution_events import ExecutionEvent as ExecutionEventSchema
 from app.schemas.requests import RequestListResponse
 from app.schemas.summary import EventCounts, RequestSummary
@@ -81,6 +82,30 @@ async def get_request_execution_events(
     return list(result.scalars().all())
 
 
+def _to_request_event(request: Request) -> RequestEvent:
+    return RequestEvent(
+        request_id=request.request_id,
+        method=request.method,
+        path=request.path,
+        status_code=request.status_code,
+        started_at=request.started_at,
+        duration_ms=request.duration_ms,
+    )
+
+
+def _to_execution_event_schema(
+    event: ExecutionEvent,
+) -> ExecutionEventSchema:
+    return ExecutionEventSchema(
+        event_id=event.event_id,
+        request_id=event.request_id,
+        event_type=event.event_type,
+        started_at=event.started_at,
+        duration_ms=event.duration_ms,
+        metadata=event.event_metadata,
+    )
+
+
 async def get_request_timeline(
     db: AsyncSession,
     request_id: str,
@@ -93,14 +118,7 @@ async def get_request_timeline(
     execution_events = await get_request_execution_events(db, request_id)
 
     return RequestTimeline(
-        request=RequestEvent(
-            request_id=request.request_id,
-            method=request.method,
-            path=request.path,
-            status_code=request.status_code,
-            started_at=request.started_at,
-            duration_ms=request.duration_ms,
-        ),
+        request=_to_request_event(request),
         events=[
             TimelineExecutionEvent(
                 event_id=event.event_id,
@@ -139,14 +157,7 @@ async def get_request_summary(
     )
 
     return RequestSummary(
-        request=RequestEvent(
-            request_id=request.request_id,
-            method=request.method,
-            path=request.path,
-            status_code=request.status_code,
-            started_at=request.started_at,
-            duration_ms=request.duration_ms,
-        ),
+        request=_to_request_event(request),
         total_events=len(execution_events),
         event_counts=EventCounts(**event_counts),
         total_execution_duration_ms=total_execution_duration_ms,
@@ -182,26 +193,132 @@ async def list_requests(
         select(Request)
         .where(*filters)
         .order_by(
-		Request.started_at.desc(),
-		Request.id.desc(),
-	)
+            Request.started_at.desc(),
+            Request.id.desc(),
+        )
         .limit(limit)
         .offset(offset)
     )
     requests = requests_result.scalars().all()
 
     return RequestListResponse(
-        items=[
-            RequestEvent(
-                request_id=request.request_id,
-                method=request.method,
-                path=request.path,
-                status_code=request.status_code,
-                started_at=request.started_at,
-                duration_ms=request.duration_ms,
-            )
-            for request in requests
-        ],
+        items=[_to_request_event(request) for request in requests],
+        total=total,
+        limit=limit,
+        offset=offset,
+    )
+
+
+async def list_execution_events(
+    db: AsyncSession,
+    limit: int,
+    offset: int,
+    event_type: str | None = None,
+    request_id: str | None = None,
+) -> ExecutionEventListResponse:
+    filters = []
+
+    if event_type is not None:
+        filters.append(ExecutionEvent.event_type == event_type)
+
+    if request_id is not None:
+        filters.append(ExecutionEvent.request_id == request_id)
+
+    total_result = await db.execute(
+        select(func.count()).select_from(ExecutionEvent).where(*filters)
+    )
+    total = total_result.scalar_one()
+
+    events_result = await db.execute(
+        select(ExecutionEvent)
+        .where(*filters)
+        .order_by(
+            ExecutionEvent.started_at.desc(),
+            ExecutionEvent.id.desc(),
+        )
+        .limit(limit)
+        .offset(offset)
+    )
+    events = events_result.scalars().all()
+
+    return ExecutionEventListResponse(
+        items=[_to_execution_event_schema(event) for event in events],
+        total=total,
+        limit=limit,
+        offset=offset,
+    )
+
+
+async def list_slow_requests(
+    db: AsyncSession,
+    threshold_ms: float,
+    limit: int,
+    offset: int,
+) -> RequestListResponse:
+    return await _list_requests_for_filters(
+        db=db,
+        filters=[Request.duration_ms >= threshold_ms],
+        limit=limit,
+        offset=offset,
+    )
+
+
+async def list_failed_requests(
+    db: AsyncSession,
+    limit: int,
+    offset: int,
+) -> RequestListResponse:
+    return await _list_requests_for_filters(
+        db=db,
+        filters=[Request.status_code >= 400],
+        limit=limit,
+        offset=offset,
+    )
+
+
+async def list_requests_with_exceptions(
+    db: AsyncSession,
+    limit: int,
+    offset: int,
+) -> RequestListResponse:
+    exception_exists = exists().where(
+        ExecutionEvent.request_id == Request.request_id,
+        ExecutionEvent.event_type == "EXCEPTION",
+    )
+
+    return await _list_requests_for_filters(
+        db=db,
+        filters=[exception_exists],
+        limit=limit,
+        offset=offset,
+    )
+
+
+async def _list_requests_for_filters(
+    db: AsyncSession,
+    filters: list,
+    limit: int,
+    offset: int,
+) -> RequestListResponse:
+    total_result = await db.execute(
+        select(func.count()).select_from(Request).where(*filters)
+    )
+    total = total_result.scalar_one()
+
+    requests_result = await db.execute(
+        select(Request)
+        .where(*filters)
+        .order_by(
+            Request.started_at.desc(),
+            Request.id.desc(),
+        )
+        .limit(limit)
+        .offset(offset)
+    )
+    requests = requests_result.scalars().all()
+
+    return RequestListResponse(
+        items=[_to_request_event(request) for request in requests],
         total=total,
         limit=limit,
         offset=offset,
