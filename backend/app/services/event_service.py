@@ -6,7 +6,11 @@ from app.models import Request
 from app.schemas.events import RequestEvent
 from app.schemas.execution_events import ExecutionEvent as ExecutionEventSchema
 from app.schemas.requests import RequestListResponse
+from app.schemas.summary import EventCounts, RequestSummary
 from app.schemas.timeline import RequestTimeline, TimelineExecutionEvent
+
+
+SUMMARY_EVENT_TYPES = ("HTTP_IN", "HTTP_OUT", "SQL", "EXCEPTION")
 
 
 async def save_request_event(
@@ -107,6 +111,46 @@ async def get_request_timeline(
             )
             for event in execution_events
         ],
+    )
+
+
+async def get_request_summary(
+    db: AsyncSession,
+    request_id: str,
+) -> RequestSummary | None:
+    request = await get_request_event(db, request_id)
+
+    if request is None:
+        return None
+
+    execution_events = await get_request_execution_events(db, request_id)
+    event_counts = dict.fromkeys(SUMMARY_EVENT_TYPES, 0)
+
+    for event in execution_events:
+        if event.event_type in event_counts:
+            event_counts[event.event_type] += 1
+
+    total_execution_duration_ms = sum(
+        event.duration_ms for event in execution_events
+    )
+    has_error = request.status_code >= 500 or any(
+        event.event_type == "EXCEPTION"
+        for event in execution_events
+    )
+
+    return RequestSummary(
+        request=RequestEvent(
+            request_id=request.request_id,
+            method=request.method,
+            path=request.path,
+            status_code=request.status_code,
+            started_at=request.started_at,
+            duration_ms=request.duration_ms,
+        ),
+        total_events=len(execution_events),
+        event_counts=EventCounts(**event_counts),
+        total_execution_duration_ms=total_execution_duration_ms,
+        has_error=has_error,
     )
 
 

@@ -8,9 +8,11 @@ from app.db.session import get_db
 from app.schemas.events import RequestEvent
 from app.schemas.execution_events import ExecutionEvent
 from app.schemas.requests import RequestListResponse
+from app.schemas.summary import RequestSummary
 from app.schemas.timeline import RequestTimeline
 from app.services.event_service import (
     get_request_event,
+    get_request_summary,
     get_request_timeline,
     list_requests,
     save_execution_event,
@@ -75,6 +77,25 @@ async def get_requests(
         path=path,
         method=method,
     )
+
+
+@app.get(
+    "/api/v1/events/{request_id}/summary",
+    response_model=RequestSummary,
+)
+async def get_event_summary(
+    request_id: str,
+    db: AsyncSession = Depends(get_db),
+) -> RequestSummary:
+    summary = await get_request_summary(db, request_id)
+
+    if summary is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Event not found",
+        )
+
+    return summary
 
 
 @app.get(
